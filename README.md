@@ -9,7 +9,7 @@ A RuneLite plugin that plays a configurable sound notification when you have tra
 * Option to trigger for all followers or only a pug
 * Plays a local notification sound when the configured distance is reached
 * Includes a rare alternate puppy sound for a little variety
-* Resets its travel counter when the follower is no longer present, user logs out, user leaving the logged-in state or local player disappears
+* Resets its travel counter when the follower is no longer present, user logs out, user leaves the logged-in state or local player disappears
 
 ## Configuration
 
