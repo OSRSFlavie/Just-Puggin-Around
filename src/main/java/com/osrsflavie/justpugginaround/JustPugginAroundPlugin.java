@@ -146,12 +146,6 @@ public class JustPugginAroundPlugin extends Plugin
         if (distance > 0)
         {
             tilesTravelled += distance;
-
-            log.debug(
-                    "Travelled {} tiles this tick; {} tiles total",
-                    distance,
-                    tilesTravelled
-            );
         }
 
         stoppedTicks = 0;
@@ -164,24 +158,12 @@ public class JustPugginAroundPlugin extends Plugin
         {
             stoppedTicks = 1;
             wasMoving = false;
-
-            log.debug(
-                    "Player stopped: tick 1 of {}",
-                    STOPPING_TICKS
-            );
-
             return;
         }
 
         if (stoppedTicks > 0)
         {
             stoppedTicks++;
-
-            log.debug(
-                    "Player stopped: tick {} of {}",
-                    stoppedTicks,
-                    STOPPING_TICKS
-            );
         }
         else
         {
@@ -199,40 +181,10 @@ public class JustPugginAroundPlugin extends Plugin
         int threshold = config.distanceThreshold();
         boolean followerNextToPlayer = isFollowerNextToPlayer(follower);
 
-        log.debug(
-                "Stopped for {} ticks after travelling {} tiles; threshold is {}; follower adjacent: {}",
-                stoppedTicks,
-                tilesTravelled,
-                threshold,
-                followerNextToPlayer
-        );
-
         if (tilesTravelled >= threshold && followerNextToPlayer)
         {
-            log.info(
-                    "Tired sound triggered after {} tiles",
-                    tilesTravelled
-            );
-
+            log.info("Tired sound triggered after {} tiles", tilesTravelled);
             playTiredSoundWithChance();
-        }
-        else
-        {
-            if (tilesTravelled < threshold)
-            {
-                log.debug(
-                        "Distance threshold not reached: {} / {} tiles",
-                        tilesTravelled,
-                        threshold
-                );
-            }
-
-            if (!followerNextToPlayer)
-            {
-                log.debug(
-                        "Follower is not adjacent to player; tired sound will not play"
-                );
-            }
         }
 
         tilesTravelled = 0;
@@ -309,10 +261,6 @@ public class JustPugginAroundPlugin extends Plugin
 
         if (clip.isRunning())
         {
-            log.debug(
-                    "Sound is already playing; skipping {}",
-                    soundResource
-            );
             return;
         }
 
@@ -321,8 +269,6 @@ public class JustPugginAroundPlugin extends Plugin
             applyVolume(clip);
             clip.setFramePosition(0);
             clip.start();
-
-            log.debug("Playing {}", soundResource);
         }
         catch (Exception ex)
         {
@@ -349,12 +295,6 @@ public class JustPugginAroundPlugin extends Plugin
                 Clip clip = AudioSystem.getClip();
                 clip.open(audioInputStream);
 
-                log.debug(
-                        "Loaded audio resource {} with format {}",
-                        soundResource,
-                        audioInputStream.getFormat()
-                );
-
                 return clip;
             }
         }
@@ -372,7 +312,6 @@ public class JustPugginAroundPlugin extends Plugin
     {
         if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN))
         {
-            log.debug("Audio clip does not support MASTER_GAIN; using default volume");
             return;
         }
 
@@ -395,12 +334,6 @@ public class JustPugginAroundPlugin extends Plugin
         );
 
         gainControl.setValue(gain);
-
-        log.debug(
-                "Audio volume set to {}% ({} dB)",
-                volume,
-                gainControl.getValue()
-        );
     }
 
     /**
