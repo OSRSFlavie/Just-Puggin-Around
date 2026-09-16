@@ -43,20 +43,12 @@ public class JustPugginAroundPlugin extends Plugin
     @Inject
     private JustPugginAroundConfig config;
 
-    /** Pre-loaded audio clips reused for playback. */
     private Clip pugTiredClip;
     private Clip puppyTiredClip;
 
-    /** Player location from the previous game tick. */
     private WorldPoint previousLocation;
-
-    /** Number of tiles travelled during the current run. */
     private int tilesTravelled;
-
-    /** Number of consecutive stationary ticks. */
     private int stoppedTicks;
-
-    /** Whether the player moved during the previous tick. */
     private boolean wasMoving;
 
     @Override
@@ -179,9 +171,18 @@ public class JustPugginAroundPlugin extends Plugin
     private void finishStoppedRun(NPC follower)
     {
         int threshold = config.distanceThreshold();
-        boolean followerNextToPlayer = isFollowerNextToPlayer(follower);
 
-        if (tilesTravelled >= threshold && followerNextToPlayer)
+        /*
+         * When All Followers Tire is enabled, any detected follower
+         * can trigger the tired sound after the configured distance.
+         *
+         * When disabled, Pugs retain the original requirement of
+         * being adjacent to the player when the run ends.
+         */
+        boolean canTrigger = config.allFollowers()
+                || isFollowerNextToPlayer(follower);
+
+        if (tilesTravelled >= threshold && canTrigger)
         {
             log.info("Tired sound triggered after {} tiles", tilesTravelled);
             playTiredSoundWithChance();
@@ -199,6 +200,9 @@ public class JustPugginAroundPlugin extends Plugin
             return false;
         }
 
+        /*
+         * All Followers Tire overrides the Pug-only name check.
+         */
         if (config.allFollowers())
         {
             return true;
@@ -289,8 +293,10 @@ public class JustPugginAroundPlugin extends Plugin
                 return null;
             }
 
-            try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
-                 AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(bufferedInputStream))
+            try (BufferedInputStream bufferedInputStream =
+                         new BufferedInputStream(inputStream);
+                 AudioInputStream audioInputStream =
+                         AudioSystem.getAudioInputStream(bufferedInputStream))
             {
                 Clip clip = AudioSystem.getClip();
                 clip.open(audioInputStream);
