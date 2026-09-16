@@ -11,9 +11,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 
 import lombok.extern.slf4j.Slf4j;
-
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
@@ -388,6 +389,10 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Plays a tired sound resource at the configured volume.
+     *
+     * The clip is closed automatically when Java Sound reports
+     * that playback has stopped. This avoids using Thread.sleep()
+     * solely to wait for the audio duration.
      */
     private void playTiredSound(String soundResource)
     {
@@ -454,7 +459,9 @@ public class JustPugginAroundPlugin extends Plugin
                         float gain =
                                 (float) (
                                         20.0 *
-                                                Math.log10(volume / 100.0)
+                                                Math.log10(
+                                                        volume / 100.0
+                                                )
                                 );
 
                         gain = Math.max(
@@ -484,31 +491,22 @@ public class JustPugginAroundPlugin extends Plugin
                     );
                 }
 
-                clip.start();
-
-                Thread cleanupThread = new Thread(() ->
+                /*
+                 * Java Sound notifies the listener when the clip
+                 * reaches the end of playback. Close the clip
+                 * there instead of creating a thread and sleeping
+                 * for the clip duration.
+                 */
+                LineListener cleanupListener = event ->
                 {
-                    try
+                    if (event.getType() == LineEvent.Type.STOP)
                     {
-                        long duration =
-                                clip.getMicrosecondLength();
-
-                        if (duration > 0)
-                        {
-                            Thread.sleep(duration / 1000L);
-                        }
-
                         clip.close();
                     }
-                    catch (InterruptedException ex)
-                    {
-                        Thread.currentThread().interrupt();
-                        clip.close();
-                    }
-                });
+                };
 
-                cleanupThread.setDaemon(true);
-                cleanupThread.start();
+                clip.addLineListener(cleanupListener);
+                clip.start();
             }
         }
         catch (Exception ex)
