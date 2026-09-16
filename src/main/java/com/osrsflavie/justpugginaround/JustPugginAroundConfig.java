@@ -9,6 +9,10 @@ import net.runelite.client.config.Units;
 @ConfigGroup("justpugginaround")
 public interface JustPugginAroundConfig extends Config
 {
+    @Range(
+            min = 1,
+            max = 1000
+    )
     @ConfigItem(
             keyName = "distanceThreshold",
             name = "Distance Before Tiring",
