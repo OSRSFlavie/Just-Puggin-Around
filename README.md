@@ -13,7 +13,7 @@ When all of the following are true:
 1. You are logged into the game.
 2. You have a qualifying follower.
 3. You have travelled at least the configured number of tiles.
-4. You stop moving for four consecutive game ticks.
+4. You stop moving for two consecutive game ticks.
 5. Your follower is on the same tile or an adjacent tile.
 
 the plugin plays a local tired sound.
