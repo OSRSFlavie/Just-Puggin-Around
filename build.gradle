@@ -36,5 +36,6 @@ tasks.register('run', JavaExec) {
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = 'com.osrsflavie.justpugginaround.JustPugginAroundPluginTest'
 
+	jvmArgs '-ea'
 	standardInput = System.in
 }
