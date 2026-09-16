@@ -37,7 +37,7 @@ public class JustPugginAroundPlugin extends Plugin
      * Number of consecutive stationary game ticks required
      * before the run is evaluated.
      */
-    private static final int STOPPING_TICKS = 4;
+    private static final int STOPPING_TICKS = 2;
 
     /**
      * Normal tired sound.
