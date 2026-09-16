@@ -39,7 +39,7 @@ public interface JustPugginAroundConfig extends Config
     @ConfigItem(
             keyName = "allFollowers",
             name = "All Followers Tire",
-            description = "Allow followers tire like pugs",
+            description = "All followers tire like pugs",
             position = 2
     )
     default boolean allFollowers()
