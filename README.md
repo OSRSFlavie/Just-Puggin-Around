@@ -132,13 +132,13 @@ When reporting a problem, include:
 * steps to reproduce the issue; and
 * relevant logs or screenshots, after removing any sensitive information.
 
-Contributing
+## Contributions
 
-Contributions are welcome when they preserve the plugin’s purpose and remain compatible with the current RuneLite Plugin Hub requirements and Jagex rules.
+**This repository does not accept contributions, pull requests, or unsolicited code changes\.**
 
-Before submitting a change, review the current RuneLite Plugin Hub review guidance and Jagex third-party-client guidance.
+The plugin is maintained solely by the repository owner\. The source code is provided for transparency, review, and personal use\.
 
-Changes that introduce automation, input injection, prohibited combat assistance, credential handling, external player-data collection, or other restricted behavior should not be submitted.
+Please do not submit pull requests, patches, or feature implementations\. Issues may still be used to report bugs or other problems with the existing plugin\.
 
 Trademarks
 
