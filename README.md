@@ -1,167 +1,82 @@
-Just Puggin’ Around
+# Just Puggin' Around
 
-A small third-party RuneLite plugin that gives your follower a little “tired” audio cue after you have travelled a configurable distance together.
+A RuneLite plugin that plays a configurable sound notification when your pug/follower has traveled a certain distance with you.
 
-Important: Just Puggin’ Around is an independent third-party project. It is not affiliated with, endorsed by, sponsored by, or otherwise associated with Jagex Limited or the RuneLite developers.
+## Features
 
-What it does
+* Configurable travel-distance threshold
+* Configurable notification volume
+* Option to trigger for all followers or only a pug
+* Plays a local notification sound when the configured distance is reached
+* Includes a rare alternate puppy sound for a little variety
+* Resets its travel counter when the follower is no longer present
 
-Just Puggin’ Around watches the player’s movement and the currently active follower through RuneLite’s client API.
+## Configuration
 
-When all of the following are true:
+The plugin provides the following configuration options:
 
-1. You are logged into the game.
-2. You have a qualifying follower.
-3. You have travelled at least the configured number of tiles.
-4. You stop moving for two consecutive game ticks.
-5. Your follower is on the same tile or an adjacent tile.
+### Distance
 
-the plugin plays a local tired sound.
+Sets how many tiles the player must travel before the tired sound can trigger.
 
-By default, only a follower named Pug qualifies. An optional configuration setting can make the same behavior apply to any follower.
+### Volume
 
-The plugin does not perform gameplay actions on the player’s behalf.
+Controls the volume of the notification sound.
 
-Features
+### All Followers
 
-* Tracks player movement in game ticks.
-* Configurable distance threshold before the tired cue can trigger.
-* Default threshold: 25 tiles.
-* Default follower: Pug.
-* Optional All Followers Tire setting.
-* Configurable audio volume from 0% to 100%.
-* Uses a local pug_tired.wav sound for the normal cue.
-* Has a 1/100 chance to play puppy_tired.wav instead.
-* Resets movement tracking when the player is no longer logged in or when there is no qualifying follower.
+When enabled, the plugin works with any follower.
 
-Configuration
+When disabled, the notification is limited to the pug.
 
-Setting	Default	Description
-Distance Before Tiring	25 tiles	Minimum accumulated travel distance before a tired cue can trigger.
-Volume	10%	Volume used for the plugin’s audio cue, where supported by the audio device.
-All Followers Tire	Off	When enabled, any current follower can qualify instead of only Pug.
+## How It Works
 
-What the plugin does not do
+Just Puggin' Around passively monitors the local player's movement and follower state.
 
-Just Puggin’ Around is intentionally passive. It:
+When the configured travel distance is reached and the follower is adjacent to the player, the plugin plays a notification sound.
 
-* does not click, move the mouse, or press keys;
-* does not inject keyboard or mouse input;
-* does not send game actions to Jagex servers;
-* does not modify outgoing chat;
-* does not automate gameplay;
-* does not make menu changes;
-* does not alter combat, prayer, inventory, equipment, spellbook, or other click zones;
-* does not provide boss or PvP combat assistance;
-* does not communicate with an external web server;
-* does not collect or transmit player information;
-* does not request or store account credentials;
-* does not execute external programs;
-* does not download or dynamically load executable code.
+The plugin does not:
 
-The repository contains only the plugin source, its RuneLite configuration, tests, and the bundled audio resources used by the plugin.
+* Automate mouse or keyboard input
+* Perform game actions on the player's behalf
+* Send gameplay actions to the game server
+* Control the player's character
+* Interact with external services
 
-Privacy
+All notification sounds are bundled with the plugin and played locally.
 
-The current implementation has no HTTP/network client and contains no external-server communication.
+## RuneLite Plugin Hub
 
-The plugin does not intentionally collect, store, or transmit personal information, account credentials, or information about other players.
+Just Puggin' Around is a third-party RuneLite plugin.
 
-Its operation is based on information already available to the local RuneLite client, such as the local player’s position and current follower.
+The plugin provides a passive audio notification based on local player movement and follower state. It does not automate player input or perform gameplay actions.
 
-Fair Play and Third-Party Client Rules
+Plugin Hub eligibility is determined by RuneLite's current review requirements and may change over time.
 
-This project is intended to remain within RuneLite’s Plugin Hub requirements and Jagex’s applicable third-party-client rules.
+## Installation
 
-The plugin is a passive audio/notification feature. It does not automate player input or gameplay.
+The recommended installation method is through the RuneLite Plugin Hub.
 
-However, no README can guarantee that a plugin will always comply with Jagex’s rules. Jagex’s rules and RuneLite’s Plugin Hub review requirements can change, and RuneLite’s review is based on the actual implementation as well as the documentation.
+Search for **Just Puggin' Around** in RuneLite's plugin configuration panel and enable the plugin.
 
-Users are responsible for following the current Jagex rules when using third-party software.
+## Development
 
-If the current Jagex or RuneLite guidance changes, the plugin should be updated or disabled as appropriate rather than relying on this README as an authoritative statement of the rules.
+This project uses Gradle and follows the standard RuneLite plugin project structure.
 
-RuneLite Plugin Hub
+To build the project locally:
 
-The Plugin Hub contains third-party plugins that are not developed or supported by the RuneLite developers. Plugin Hub submissions are reviewed for security and game-rule compliance, but RuneLite does not guarantee that third-party plugins will work correctly or remain compatible indefinitely.
-
-If this project is distributed through the RuneLite Plugin Hub, use the Plugin Hub installation mechanism provided by the RuneLite client.
-
-For development or local testing, follow the build instructions below.
-
-Building
-
-This project targets Java 11 and uses Gradle.
-
-From the repository root:
-
+```bash
 ./gradlew build
+```
 
 On Windows:
 
+```bat
 gradlew.bat build
+```
 
-For the development RuneLite client:
+The project also includes the RuneLite development launcher used for local testing.
 
-./gradlew run
+## License
 
-A successful build does not by itself establish that the plugin is compliant with current Jagex or RuneLite requirements. In-game behavior should be tested manually.
-
-Development
-
-The plugin is implemented in Java using RuneLite’s client API.
-
-The main components are:
-
-* JustPugginAroundPlugin — movement tracking and audio triggering.
-* JustPugginAroundConfig — RuneLite configuration settings.
-* pug_tired.wav — normal tired sound.
-* puppy_tired.wav — rare alternate sound.
-
-There is no external network service or runtime code download.
-
-Reporting Issues
-
-Please report bugs and feature requests through the repository’s GitHub Issues page.
-
-When reporting a problem, include:
-
-* RuneLite version;
-* plugin version or commit;
-* relevant plugin settings;
-* steps to reproduce the issue; and
-* relevant logs or screenshots, after removing any sensitive information.
-
-## Contributions
-
-**This repository does not accept contributions, pull requests, or unsolicited code changes\.**
-
-The plugin is maintained solely by the repository owner\. The source code is provided for transparency, review, and personal use\.
-
-Please do not submit pull requests, patches, or feature implementations\. Issues may still be used to report bugs or other problems with the existing plugin\.
-
-Trademarks
-
-“RuneLite”, “Old School RuneScape”, “RuneScape”, “Jagex”, and related names and marks belong to their respective owners.
-
-Their use in this README is solely to identify the software and services with which this third-party project is intended to work. Nothing in this repository should be interpreted as an endorsement, sponsorship, or affiliation with Jagex or RuneLite.
-
-Official Guidance
-
-For authoritative and current requirements, consult:
-
-* Jagex’s current RuneScape Rules.
-* Jagex’s current Third-Party Client Guidelines.
-* RuneLite’s current Plugin Hub Review documentation.
-* RuneLite’s current Rejected or Rolled-Back Features documentation.
-* RuneLite Plugin Hub documentation.
-
-Those sources take precedence over this README if their requirements change.
-
-Disclaimer
-
-Just Puggin’ Around is provided on an “as is” basis.
-
-The author does not guarantee compatibility with every RuneLite release or that the plugin will remain eligible for the RuneLite Plugin Hub as Jagex and RuneLite requirements evolve.
-
-Use of the plugin remains subject to the current rules and policies of Jagex and RuneLite.
+See the `LICENSE` file included with this repository.
