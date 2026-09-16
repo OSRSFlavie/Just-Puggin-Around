@@ -85,5 +85,7 @@ All audio files included in the resources/ directory were originally created by 
 
 ## Support
 [Report an issue](https://github.com/OSRSFlavie/Just-Puggin-Around/issues) 
+
 [Buy me a beer!](https://ko-fi.com/osrsFlavie)
+
 [Buy me a coffee!](https://buymeacoffee.com/osrsflavie)
