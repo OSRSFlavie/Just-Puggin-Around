@@ -13,7 +13,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.osrsflavie.justpugginaround.JustPugginAroundPluginTest'
+def pluginMainClass = 'com.osrsflavie.justpugginaround.JustPugginAroundPlugin'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
