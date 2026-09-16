@@ -1,4 +1,4 @@
-package com.example;
+package com.osrsflavie.justpugginaround;
 
 import com.google.inject.Provides;
 

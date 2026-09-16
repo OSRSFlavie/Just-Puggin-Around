@@ -1,4 +1,4 @@
-package com.example;
+package com.osrsflavie.justpugginaround;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
