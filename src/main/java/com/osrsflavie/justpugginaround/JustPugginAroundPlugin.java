@@ -11,8 +11,6 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
-import javax.sound.sampled.LineEvent;
-import javax.sound.sampled.LineListener;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -21,7 +19,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
@@ -34,20 +31,8 @@ import net.runelite.client.plugins.PluginDescriptor;
 )
 public class JustPugginAroundPlugin extends Plugin
 {
-    /**
-     * Number of consecutive stationary game ticks required
-     * before the run is evaluated.
-     */
     private static final int STOPPING_TICKS = 2;
-
-    /**
-     * Normal tired sound.
-     */
     private static final String PUG_TIRED_SOUND = "/pug_tired.wav";
-
-    /**
-     * Rare alternate tired sound.
-     */
     private static final String PUPPY_TIRED_SOUND = "/puppy_tired.wav";
 
     @Inject
@@ -56,24 +41,20 @@ public class JustPugginAroundPlugin extends Plugin
     @Inject
     private JustPugginAroundConfig config;
 
-    /**
-     * Player location from the previous game tick.
-     */
+    /** Pre-loaded audio clips reused for playback. */
+    private Clip pugTiredClip;
+    private Clip puppyTiredClip;
+
+    /** Player location from the previous game tick. */
     private WorldPoint previousLocation;
 
-    /**
-     * Number of tiles travelled during the current run.
-     */
+    /** Number of tiles travelled during the current run. */
     private int tilesTravelled;
 
-    /**
-     * Number of consecutive stationary ticks.
-     */
+    /** Number of consecutive stationary ticks. */
     private int stoppedTicks;
 
-    /**
-     * Whether the player moved during the previous tick.
-     */
+    /** Whether the player moved during the previous tick. */
     private boolean wasMoving;
 
     @Override
@@ -81,12 +62,21 @@ public class JustPugginAroundPlugin extends Plugin
     {
         resetTracking();
 
+        pugTiredClip = loadClip(PUG_TIRED_SOUND);
+        puppyTiredClip = loadClip(PUPPY_TIRED_SOUND);
+
         log.info("Just Puggin' Around started");
     }
 
     @Override
     protected void shutDown()
     {
+        closeClip(pugTiredClip);
+        pugTiredClip = null;
+
+        closeClip(puppyTiredClip);
+        puppyTiredClip = null;
+
         resetTracking();
 
         log.info("Just Puggin' Around stopped");
@@ -118,34 +108,22 @@ public class JustPugginAroundPlugin extends Plugin
 
         NPC follower = client.getFollower();
 
-        /*
-         * If there is no qualifying follower, there is
-         * nothing to track.
-         */
         if (!hasQualifyingFollower(follower))
         {
             resetTracking();
-
-            previousLocation =
-                    client.getLocalPlayer().getWorldLocation();
-
+            previousLocation = client.getLocalPlayer().getWorldLocation();
             return;
         }
 
-        WorldPoint currentLocation =
-                client.getLocalPlayer().getWorldLocation();
+        WorldPoint currentLocation = client.getLocalPlayer().getWorldLocation();
 
-        /*
-         * Establish the initial player position.
-         */
         if (previousLocation == null)
         {
             previousLocation = currentLocation;
             return;
         }
 
-        boolean moved =
-                !currentLocation.equals(previousLocation);
+        boolean moved = !currentLocation.equals(previousLocation);
 
         if (moved)
         {
@@ -159,13 +137,9 @@ public class JustPugginAroundPlugin extends Plugin
         previousLocation = currentLocation;
     }
 
-    /**
-     * Handles a tick during which the player moved.
-     */
     private void handleMovement(WorldPoint currentLocation)
     {
-        int distance =
-                previousLocation.distanceTo(currentLocation);
+        int distance = previousLocation.distanceTo(currentLocation);
 
         if (distance > 0)
         {
@@ -178,22 +152,12 @@ public class JustPugginAroundPlugin extends Plugin
             );
         }
 
-        /*
-         * Moving cancels the stopping timer but does not
-         * reset accumulated travel distance.
-         */
         stoppedTicks = 0;
         wasMoving = true;
     }
 
-    /**
-     * Handles a tick during which the player did not move.
-     */
     private void handleStopped(NPC follower)
     {
-        /*
-         * First stationary tick after movement.
-         */
         if (wasMoving)
         {
             stoppedTicks = 1;
@@ -207,9 +171,6 @@ public class JustPugginAroundPlugin extends Plugin
             return;
         }
 
-        /*
-         * Continue counting consecutive stationary ticks.
-         */
         if (stoppedTicks > 0)
         {
             stoppedTicks++;
@@ -225,41 +186,25 @@ public class JustPugginAroundPlugin extends Plugin
             return;
         }
 
-        /*
-         * Once the stopping threshold has been reached,
-         * evaluate the run.
-         */
         if (stoppedTicks >= STOPPING_TICKS)
         {
             finishStoppedRun(follower);
         }
     }
 
-    /**
-     * Evaluates the completed stopping period.
-     */
     private void finishStoppedRun(NPC follower)
     {
         int threshold = config.distanceThreshold();
-
-        boolean followerNextToPlayer =
-                isFollowerNextToPlayer(follower);
+        boolean followerNextToPlayer = isFollowerNextToPlayer(follower);
 
         log.debug(
-                "Stopped for {} ticks after travelling {} tiles; " +
-                        "threshold is {}; follower adjacent: {}",
+                "Stopped for {} ticks after travelling {} tiles; threshold is {}; follower adjacent: {}",
                 stoppedTicks,
                 tilesTravelled,
                 threshold,
                 followerNextToPlayer
         );
 
-        /*
-         * The sound only plays when:
-         *
-         * 1. The configured distance threshold was reached.
-         * 2. The follower is adjacent to the player.
-         */
         if (tilesTravelled >= threshold && followerNextToPlayer)
         {
             log.info(
@@ -283,26 +228,16 @@ public class JustPugginAroundPlugin extends Plugin
             if (!followerNextToPlayer)
             {
                 log.debug(
-                        "Follower is not adjacent to player; " +
-                                "tired sound will not play"
+                        "Follower is not adjacent to player; tired sound will not play"
                 );
             }
         }
 
-        /*
-         * Once the stopping period has completed, reset
-         * both the accumulated distance and stopping timer.
-         */
         tilesTravelled = 0;
         stoppedTicks = 0;
         wasMoving = false;
     }
 
-    /**
-     * Determines whether the current follower qualifies.
-     * With "All followers tire like pugs" disabled,
-     * only a follower named Pug qualifies.
-     */
     private boolean hasQualifyingFollower(NPC follower)
     {
         if (follower == null)
@@ -310,28 +245,15 @@ public class JustPugginAroundPlugin extends Plugin
             return false;
         }
 
-        /*
-         * Configuration override allowing any follower.
-         */
         if (config.allFollowers())
         {
             return true;
         }
 
-        /*
-         * Default behavior: only Pug.
-         */
         return follower.getName() != null
                 && follower.getName().equalsIgnoreCase("Pug");
     }
 
-    /**
-     * Determines whether the follower is adjacent to the player.
-     * A distance of 0 or 1 is accepted. Normally a follower
-     * will be on a neighboring tile, but accepting 0 prevents
-     * false negatives if the client reports both entities
-     * on the same tile.
-     */
     private boolean isFollowerNextToPlayer(NPC follower)
     {
         if (follower == null || client.getLocalPlayer() == null)
@@ -339,11 +261,8 @@ public class JustPugginAroundPlugin extends Plugin
             return false;
         }
 
-        WorldPoint playerLocation =
-                client.getLocalPlayer().getWorldLocation();
-
-        WorldPoint followerLocation =
-                follower.getWorldLocation();
+        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
+        WorldPoint followerLocation = follower.getWorldLocation();
 
         if (playerLocation == null || followerLocation == null)
         {
@@ -355,169 +274,154 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Performs the 1/100 rare-sound roll.
-     * 1/100:
-     *     puppy_tired.wav
-     * 99/100:
-     *     pug_tired.wav
+     * 1/100: puppy_tired.wav
+     * 99/100: pug_tired.wav
      */
     private void playTiredSoundWithChance()
     {
-        /*
-         * nextInt(100) returns 0 through 99.
-         * Only 0 selects the rare sound, giving exactly
-         * a 1/100 chance.
-         */
         if (ThreadLocalRandom.current().nextInt(100) == 0)
         {
-            log.info(
-                    "Rare tired sound triggered: {}",
-                    PUPPY_TIRED_SOUND
-            );
-
-            playTiredSound(PUPPY_TIRED_SOUND);
+            log.info("Rare tired sound triggered: {}", PUPPY_TIRED_SOUND);
+            playTiredSound(puppyTiredClip, PUPPY_TIRED_SOUND);
         }
         else
         {
-            playTiredSound(PUG_TIRED_SOUND);
+            playTiredSound(pugTiredClip, PUG_TIRED_SOUND);
         }
     }
 
     /**
-     * Plays a tired sound resource at the configured volume.
-     * The clip is closed automatically when Java Sound reports
-     * that playback has stopped. This avoids using it
-     * solely to wait for the audio duration.
+     * Plays an already-loaded audio clip.
+     * No audio decoding or Clip creation occurs on the GameTick path.
      */
-    private void playTiredSound(String soundResource)
+    private void playTiredSound(Clip clip, String soundResource)
     {
-        log.info("Attempting to play {}", soundResource);
+        if (clip == null)
+        {
+            log.warn(
+                    "Unable to play {} because the audio clip was not loaded",
+                    soundResource
+            );
+            return;
+        }
 
-        try (InputStream inputStream =
-                     getClass().getResourceAsStream(soundResource))
+        if (clip.isRunning())
+        {
+            log.debug(
+                    "Sound is already playing; skipping {}",
+                    soundResource
+            );
+            return;
+        }
+
+        try
+        {
+            applyVolume(clip);
+            clip.setFramePosition(0);
+            clip.start();
+
+            log.debug("Playing {}", soundResource);
+        }
+        catch (Exception ex)
+        {
+            log.warn("Unable to play {}", soundResource, ex);
+        }
+    }
+
+    /**
+     * Loads a classpath audio resource into a Clip during plugin startup.
+     */
+    private Clip loadClip(String soundResource)
+    {
+        try (InputStream inputStream = getClass().getResourceAsStream(soundResource))
         {
             if (inputStream == null)
             {
-                log.error(
-                        "Sound resource was not found: {}",
-                        soundResource
-                );
-
-                return;
+                log.warn("Sound resource was not found: {}", soundResource);
+                return null;
             }
 
-            try (BufferedInputStream bufferedInputStream =
-                         new BufferedInputStream(inputStream);
-                 AudioInputStream audioInputStream =
-                         AudioSystem.getAudioInputStream(
-                                 bufferedInputStream))
+            try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+                 AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(bufferedInputStream))
             {
-                log.info(
-                        "Audio format for {}: {}",
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioInputStream);
+
+                log.debug(
+                        "Loaded audio resource {} with format {}",
                         soundResource,
                         audioInputStream.getFormat()
                 );
 
-                final Clip clip = AudioSystem.getClip();
-
-                clip.open(audioInputStream);
-
-                /*
-                 * Apply configured volume if the audio device
-                 * supports MASTER_GAIN.
-                 */
-                if (clip.isControlSupported(
-                        FloatControl.Type.MASTER_GAIN))
-                {
-                    FloatControl gainControl =
-                            (FloatControl) clip.getControl(
-                                    FloatControl.Type.MASTER_GAIN
-                            );
-
-                    int volume = config.volume();
-
-                    if (volume <= 0)
-                    {
-                        gainControl.setValue(
-                                gainControl.getMinimum()
-                        );
-                    }
-                    else
-                    {
-                        /*
-                         * Convert percentage to decibels.
-                         *
-                         * 100% = 0 dB
-                         * 50%  ≈ -6 dB
-                         * 25%  ≈ -12 dB
-                         */
-                        float gain =
-                                (float) (
-                                        20.0 *
-                                                Math.log10(
-                                                        volume / 100.0
-                                                )
-                                );
-
-                        gain = Math.max(
-                                gainControl.getMinimum(),
-                                Math.min(
-                                        gainControl.getMaximum(),
-                                        gain
-                                )
-                        );
-
-                        gainControl.setValue(gain);
-                    }
-
-                    log.debug(
-                            "Playing {} at {}% volume ({} dB)",
-                            soundResource,
-                            volume,
-                            gainControl.getValue()
-                    );
-                }
-                else
-                {
-                    log.warn(
-                            "Audio clip does not support MASTER_GAIN; " +
-                                    "playing {} at default volume",
-                            soundResource
-                    );
-                }
-
-                /*
-                 * Java Sound notifies the listener when the clip
-                 * reaches the end of playback. Close the clip
-                 * there instead of creating a thread and sleeping
-                 * for the clip duration.
-                 */
-                LineListener cleanupListener = event ->
-                {
-                    if (event.getType() == LineEvent.Type.STOP)
-                    {
-                        clip.close();
-                    }
-                };
-
-                clip.addLineListener(cleanupListener);
-                clip.start();
+                return clip;
             }
         }
         catch (Exception ex)
         {
-            log.error(
-                    "Unable to play {}. Exception type: {}. Message: {}",
-                    soundResource,
-                    ex.getClass().getName(),
-                    ex.getMessage(),
-                    ex
-            );
+            log.warn("Unable to load sound resource {}", soundResource, ex);
+            return null;
         }
     }
 
     /**
-     * Resets all movement tracking.
+     * Applies the configured volume to an already-loaded clip.
      */
+    private void applyVolume(Clip clip)
+    {
+        if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN))
+        {
+            log.debug("Audio clip does not support MASTER_GAIN; using default volume");
+            return;
+        }
+
+        FloatControl gainControl =
+                (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+        int volume = config.volume();
+
+        if (volume <= 0)
+        {
+            gainControl.setValue(gainControl.getMinimum());
+            return;
+        }
+
+        float gain = (float) (20.0 * Math.log10(volume / 100.0));
+
+        gain = Math.max(
+                gainControl.getMinimum(),
+                Math.min(gainControl.getMaximum(), gain)
+        );
+
+        gainControl.setValue(gain);
+
+        log.debug(
+                "Audio volume set to {}% ({} dB)",
+                volume,
+                gainControl.getValue()
+        );
+    }
+
+    /**
+     * Stops and closes a loaded audio clip.
+     */
+    private void closeClip(Clip clip)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        try
+        {
+            clip.stop();
+            clip.close();
+        }
+        catch (Exception ex)
+        {
+            log.debug("Error while closing audio clip", ex);
+        }
+    }
+
     private void resetTracking()
     {
         previousLocation = null;
@@ -529,8 +433,6 @@ public class JustPugginAroundPlugin extends Plugin
     @Provides
     JustPugginAroundConfig provideConfig(ConfigManager configManager)
     {
-        return configManager.getConfig(
-                JustPugginAroundConfig.class
-        );
+        return configManager.getConfig(JustPugginAroundConfig.class);
     }
 }
