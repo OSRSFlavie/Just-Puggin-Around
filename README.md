@@ -84,4 +84,6 @@ See the `LICENSE` file included with this repository.
 All audio files included in the resources/ directory were originally created by osrsFlavie. All rights reserved.
 
 ## Support
-[Report an issue or buy me a coffee!](https://github.com/OSRSFlavie/Just-Puggin-Around/issues) 
+[Report an issue](https://github.com/OSRSFlavie/Just-Puggin-Around/issues) 
+[Buy me a beer!](https://ko-fi.com/osrsFlavie)
+[Buy me a coffee!](https://buymeacoffee.com/osrsflavie)
