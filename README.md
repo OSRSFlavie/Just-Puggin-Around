@@ -87,14 +87,14 @@ See the `LICENSE` file included with this repository.
 * **Track Name:** Animals - Dog, Pug, Panting, Breathing
 * **Source:** https://artlist.io/sfx/track/animals---dog-pug-panting-breathing-/70048
 * **Creator:** Boom Library
-* **License:**  Creative Commons Attribution 4.0 (CC BY 4.0)
+* **License:**  Proprietary royalty-free subscription license. **All rights reserved by the original creators.** This asset is bundled exclusively for this project and may not be redistributed, extracted, or reused in separate works without a valid Artlist subscription.
 * **Modifications:** None
 
 ### 1. puppy_tired.wav
 * **Track Name:** Animals - Dog, Pug, Panting, Breathing
 * **Source:** https://artlist.io/sfx/track/animals---dog-pug-panting-breathing-/70048
 * **Creator:** Boom Library
-* **License:**  Creative Commons Attribution 4.0 (CC BY 4.0)
+* **License:**  Proprietary royalty-free subscription license. **All rights reserved by the original creators.** This asset is bundled exclusively for this project and may not be redistributed, extracted, or reused in separate works without a valid Artlist subscription.
 * **Modifications:** Added a self recorded track to the background to add some variety.
 
 
