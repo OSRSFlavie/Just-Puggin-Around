@@ -12,7 +12,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
@@ -23,8 +22,9 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@Slf4j
 @PluginDescriptor(
         name = "Just Puggin' Around",
         description = "Plays tired sounds after travelling a configurable distance with a follower"
@@ -34,6 +34,8 @@ public class JustPugginAroundPlugin extends Plugin
     private static final int STOPPING_TICKS = 2;
     private static final String PUG_TIRED_SOUND = "/pug_tired.wav";
     private static final String PUPPY_TIRED_SOUND = "/puppy_tired.wav";
+
+    private static final Logger log = LoggerFactory.getLogger(JustPugginAroundPlugin.class);
 
     @Inject
     private Client client;
