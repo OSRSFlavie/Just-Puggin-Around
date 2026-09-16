@@ -27,7 +27,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.osrsflavie'
+group = 'com.osrsflavie.justpugginaround'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
