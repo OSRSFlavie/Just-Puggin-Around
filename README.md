@@ -80,3 +80,23 @@ The project also includes the RuneLite development launcher used for local testi
 ## License
 
 See the `LICENSE` file included with this repository.
+
+# Audio Credits & Attributions
+
+### 1. pug_tired.wav
+* **Track Name:** Animals - Dog, Pug, Panting, Breathing
+* **Source:** https://artlist.io/sfx/track/animals---dog-pug-panting-breathing-/70048
+* **Creator:** Boom Library
+* **License:**  Creative Commons Attribution 4.0 (CC BY 4.0)
+* **Modifications:** None
+
+### 1. puppy_tired.wav
+* **Track Name:** Animals - Dog, Pug, Panting, Breathing
+* **Source:** https://artlist.io/sfx/track/animals---dog-pug-panting-breathing-/70048
+* **Creator:** Boom Library
+* **License:**  Creative Commons Attribution 4.0 (CC BY 4.0)
+* **Modifications:** Added a self recorded track to the background to add some variety.
+
+
+## Support
+https://github.com/OSRSFlavie/Just-Puggin-Around/issues
