@@ -1,6 +1,6 @@
 # Just Puggin' Around
 
-A RuneLite plugin that plays a configurable sound notification when your pug/follower has traveled a certain distance with you.
+A RuneLite plugin that plays a configurable sound notification when you have traveled a certain distance with a Pug or other follower.
 
 ## Features
 
@@ -9,7 +9,7 @@ A RuneLite plugin that plays a configurable sound notification when your pug/fol
 * Option to trigger for all followers or only a pug
 * Plays a local notification sound when the configured distance is reached
 * Includes a rare alternate puppy sound for a little variety
-* Resets its travel counter when the follower is no longer present, user logs out, user leaving the logged-in statem or local player dissapears
+* Resets its travel counter when the follower is no longer present, user logs out, user leaving the logged-in state or local player disappears
 
 ## Configuration
 
@@ -84,4 +84,4 @@ See the `LICENSE` file included with this repository.
 All audio files included in the resources/ directory were originally created by osrsFlavie. All rights reserved.
 
 ## Support
-https://github.com/OSRSFlavie/Just-Puggin-Around/issues
+[Report an issue](https://github.com/yourusername/yourrepository/issues) or buy me a coffee!
