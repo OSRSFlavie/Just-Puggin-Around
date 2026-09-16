@@ -300,7 +300,6 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Determines whether the current follower qualifies.
-     *
      * With "All followers tire like pugs" disabled,
      * only a follower named Pug qualifies.
      */
@@ -328,7 +327,6 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Determines whether the follower is adjacent to the player.
-     *
      * A distance of 0 or 1 is accepted. Normally a follower
      * will be on a neighboring tile, but accepting 0 prevents
      * false negatives if the client reports both entities
@@ -357,10 +355,8 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Performs the 1/100 rare-sound roll.
-     *
      * 1/100:
      *     puppy_tired.wav
-     *
      * 99/100:
      *     pug_tired.wav
      */
@@ -368,7 +364,6 @@ public class JustPugginAroundPlugin extends Plugin
     {
         /*
          * nextInt(100) returns 0 through 99.
-         *
          * Only 0 selects the rare sound, giving exactly
          * a 1/100 chance.
          */
@@ -389,9 +384,8 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Plays a tired sound resource at the configured volume.
-     *
      * The clip is closed automatically when Java Sound reports
-     * that playback has stopped. This avoids using Thread.sleep()
+     * that playback has stopped. This avoids using it
      * solely to wait for the audio duration.
      */
     private void playTiredSound(String soundResource)
