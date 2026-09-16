@@ -31,7 +31,7 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.register('run', JavaExec) {
 	group = 'application'
-	description = 'Launch RuneLite with Just Puggin'' Around loaded'
+	description = "Launch RuneLite with Just Puggin' Around loaded"
 
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = 'com.osrsflavie.justpugginaround.JustPugginAroundPluginTest'
