@@ -61,6 +61,16 @@ public class JustPugginAroundPlugin extends Plugin
      */
     private boolean wasMoving;
 
+    /**
+     * Whether the distance threshold has been reached and
+     * we are waiting for the follower to catch up.
+     *
+     * This is intentionally NOT reset when the stopping window
+     * completes. The sound remains pending until the follower
+     * actually reaches the player.
+     */
+    private boolean tiredSoundPending;
+
     @Override
     protected void startUp()
     {
@@ -115,8 +125,7 @@ public class JustPugginAroundPlugin extends Plugin
         NPC follower = client.getFollower();
 
         /*
-         * There is nothing to track without a follower. Every pet is
-         * eligible; the tired sound is gated by adjacency when the run ends.
+         * There is nothing to track without a follower.
          */
         if (follower == null)
         {
@@ -126,6 +135,32 @@ public class JustPugginAroundPlugin extends Plugin
                     localPlayer.getWorldLocation();
 
             return;
+        }
+
+        /*
+         * If the threshold was previously reached but the pet
+         * was too far away, keep checking every tick until it
+         * catches up.
+         *
+         * This check happens BEFORE movement/stopping processing
+         * so the sound is not tied to the 2-tick stopping window.
+         */
+        if (tiredSoundPending &&
+                isFollowerNextToPlayer(localPlayer, follower))
+        {
+            log.info(
+                    "Pet caught up after threshold was reached; playing tired sound"
+            );
+
+            playTiredSound(follower);
+            tiredSoundPending = false;
+
+            /*
+             * The completed tired-sound event starts a new run.
+             */
+            tilesTravelled = 0;
+            stoppedTicks = 0;
+            wasMoving = false;
         }
 
         WorldPoint currentLocation = localPlayer.getWorldLocation();
@@ -159,6 +194,23 @@ public class JustPugginAroundPlugin extends Plugin
     private void handleMovement(int distance)
     {
         tilesTravelled += distance;
+
+        /*
+         * As soon as the configured distance threshold is reached,
+         * remember that a tired sound is owed to the player.
+         *
+         * We do NOT require the pet to be adjacent here.
+         */
+        if (!tiredSoundPending &&
+                tilesTravelled >= config.distanceThreshold())
+        {
+            tiredSoundPending = true;
+
+            log.debug(
+                    "Distance threshold reached at {} tiles; tired sound is now pending",
+                    tilesTravelled
+            );
+        }
 
         /*
          * Moving cancels the stopping timer but does not
@@ -219,6 +271,11 @@ public class JustPugginAroundPlugin extends Plugin
 
     /**
      * Evaluates the completed stopping period.
+     *
+     * IMPORTANT:
+     * If the pet is not adjacent, we do NOT discard the event.
+     * The tiredSoundPending flag remains true and onGameTick()
+     * will continue checking for the pet to catch up.
      */
     private void finishStoppedRun(NPC follower, Player localPlayer)
     {
@@ -229,20 +286,38 @@ public class JustPugginAroundPlugin extends Plugin
 
         log.debug(
                 "Stopped for {} ticks after travelling {} tiles; " +
-                        "threshold is {}; pet adjacent: {}",
+                        "threshold is {}; pet adjacent: {}; sound pending: {}",
                 stoppedTicks,
                 tilesTravelled,
                 threshold,
-                petNextToPlayer
+                petNextToPlayer,
+                tiredSoundPending
         );
 
         /*
-         * The sound only plays when:
+         * If the threshold was reached but the movement handler
+         * hasn't already marked the sound pending, mark it now.
          *
-         * 1. The configured distance threshold was reached.
-         * 2. The pet is adjacent to the player.
+         * This also covers the case where the threshold was reached
+         * without a movement tick being processed in the normal path.
          */
-        if (tilesTravelled >= threshold && petNextToPlayer)
+        if (!tiredSoundPending && tilesTravelled >= threshold)
+        {
+            tiredSoundPending = true;
+
+            log.debug(
+                    "Distance threshold reached during stop evaluation; " +
+                            "tired sound is now pending"
+            );
+        }
+
+        /*
+         * If the pet is already beside the player, play immediately.
+         *
+         * Otherwise, leave tiredSoundPending=true so that the sound
+         * will play later when the pet catches up.
+         */
+        if (tiredSoundPending && petNextToPlayer)
         {
             log.info(
                     "Tired sound triggered after {} tiles",
@@ -250,32 +325,50 @@ public class JustPugginAroundPlugin extends Plugin
             );
 
             playTiredSound(follower);
-        }
-        else
-        {
-            if (tilesTravelled < threshold)
-            {
-                log.debug(
-                        "Distance threshold not reached: {} / {} tiles",
-                        tilesTravelled,
-                        threshold
-                );
-            }
 
-            if (!petNextToPlayer)
-            {
-                log.debug(
-                        "Pet is not adjacent to player; " +
-                                "tired sound will not play"
-                );
-            }
+            tiredSoundPending = false;
+
+            /*
+             * The sound event has completed, so start tracking
+             * a fresh distance run.
+             */
+            tilesTravelled = 0;
+        }
+        else if (tilesTravelled < threshold)
+        {
+            log.debug(
+                    "Distance threshold not reached: {} / {} tiles",
+                    tilesTravelled,
+                    threshold
+            );
+
+            /*
+             * No threshold was reached, so this run can safely reset.
+             */
+            tilesTravelled = 0;
+            tiredSoundPending = false;
+        }
+        else if (!petNextToPlayer)
+        {
+            log.debug(
+                    "Pet is not adjacent to player; " +
+                            "tired sound remains pending until pet catches up"
+            );
+
+            /*
+             * IMPORTANT:
+             * Do NOT reset tiredSoundPending here.
+             *
+             * The pet may take additional ticks to catch up.
+             */
         }
 
         /*
-         * Once the stopping period has completed, reset
-         * both the accumulated distance and stopping timer.
+         * The stopping window itself is complete.
+         * Reset only the stopping timer.
+         *
+         * Do NOT clear tiredSoundPending here.
          */
-        tilesTravelled = 0;
         stoppedTicks = 0;
         wasMoving = false;
     }
@@ -297,7 +390,8 @@ public class JustPugginAroundPlugin extends Plugin
             return false;
         }
 
-        WorldPoint playerLocation = localPlayer.getWorldLocation();
+        WorldPoint playerLocation =
+                localPlayer.getWorldLocation();
 
         WorldPoint petLocation =
                 follower.getWorldLocation();
@@ -307,7 +401,8 @@ public class JustPugginAroundPlugin extends Plugin
             return false;
         }
 
-        return playerLocation.distanceTo(petLocation) <= FOLLOWER_ADJACENT_DISTANCE;
+        return playerLocation.distanceTo(petLocation)
+                <= FOLLOWER_ADJACENT_DISTANCE;
     }
 
     /**
@@ -360,6 +455,7 @@ public class JustPugginAroundPlugin extends Plugin
         tilesTravelled = 0;
         stoppedTicks = 0;
         wasMoving = false;
+        tiredSoundPending = false;
     }
 
     @Provides
