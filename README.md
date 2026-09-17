@@ -55,20 +55,11 @@ Plugin Hub eligibility is determined by RuneLite's current review requirements a
 
 ## Installation
 
-## Installation
-
 ### ⏳ Method 1: RuneLite Plugin Hub (Pending Approval) - RECOMMENDED
 *Once approved*, this will be the recommended installation method:
 1. Open your **RuneLite** configuration panel.
 2. Search for **Just Puggin' Around** in the **Plugin Hub**.
 3. Click **Install**.
-
-### 🛠️ Method 2: Manual Installation (For Beta Testing)
-Until the plugin is officially accepted, you can install it manually:
-1. Download the latest release `.jar` file from the **Releases** tab on this GitHub repository.
-2. Open RuneLite, open the settings panel, and scroll to the bottom to find your external plugins directory (or navigate to `%userprofile%\.runelite\plugins\` on Windows).
-3. Drop the downloaded `.jar` file into that folder.
-4. Restart RuneLite.
 
 ## Development
 
