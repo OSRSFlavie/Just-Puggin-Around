@@ -6,9 +6,9 @@ A RuneLite plugin that plays a configurable sound notification when you have tra
 
 * Configurable travel-distance threshold
 * Configurable notification volume
-* Option to trigger for all followers or only a pug
+* Option to trigger for all followers to sound like a pug
 * Plays a local notification sound when the configured distance is reached
-* Includes a rare alternate puppy sound for a little variety
+* Includes rare alternate sounds for a little variety
 * Resets its travel counter when the follower is no longer present, user logs out, user leaves the logged-in state or local player disappears
 
 ## Configuration
@@ -55,8 +55,7 @@ Plugin Hub eligibility is determined by RuneLite's current review requirements a
 
 ## Installation
 
-### ⏳ Method 1: RuneLite Plugin Hub (Pending Approval) - RECOMMENDED
-*Once approved*, this will be the recommended installation method:
+### RuneLite Plugin Hub (Pending Approval)
 1. Open your **RuneLite** configuration panel.
 2. Search for **Just Puggin' Around** in the **Plugin Hub**.
 3. Click **Install**.
@@ -83,7 +82,7 @@ The project also includes the RuneLite development launcher used for local testi
 
 See the `LICENSE` file included with this repository.
 
-All audio files included in the resources/ directory were originally created by osrsFlavie. All rights reserved.
+All audio files included in the resources/ directory were created by osrsFlavie. All rights reserved.
 
 ## Support
 [Report an issue](https://github.com/OSRSFlavie/Just-Puggin-Around/issues) 

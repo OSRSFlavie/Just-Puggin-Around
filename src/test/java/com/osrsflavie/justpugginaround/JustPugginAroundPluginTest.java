@@ -5,7 +5,6 @@ import net.runelite.client.externalplugins.ExternalPluginManager;
 
 public class JustPugginAroundPluginTest
 {
-    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception
     {
         /*

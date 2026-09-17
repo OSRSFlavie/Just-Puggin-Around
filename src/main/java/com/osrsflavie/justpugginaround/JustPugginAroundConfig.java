@@ -9,15 +9,22 @@ import net.runelite.client.config.Units;
 @ConfigGroup("justpugginaround")
 public interface JustPugginAroundConfig extends Config
 {
-    @Range(
-            min = 1,
-            max = 1000
+    @ConfigItem(
+            keyName = "allPetsTireLikePugs",
+            name = "All Pets Tire Like Pugs",
+            description = "Makes every pet use the Pug tired sounds",
+            position = 0
     )
+    default boolean allPetsTireLikePugs()
+    {
+        return false;
+    }
+
     @ConfigItem(
             keyName = "distanceThreshold",
             name = "Distance Before Tiring",
-            description = "Number of tiles before your follower tires",
-            position = 0
+            description = "Number of tiles before your pet tires",
+            position = 1
     )
     default int distanceThreshold()
     {
@@ -33,21 +40,10 @@ public interface JustPugginAroundConfig extends Config
             keyName = "volume",
             name = "Volume",
             description = "Volume",
-            position = 1
+            position = 2
     )
     default int volume()
     {
         return 10;
-    }
-
-    @ConfigItem(
-            keyName = "allFollowers",
-            name = "All Followers Tire",
-            description = "All followers tire like pugs",
-            position = 2
-    )
-    default boolean allFollowers()
-    {
-        return false;
     }
 }

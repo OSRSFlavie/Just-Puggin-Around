@@ -2,36 +2,35 @@ package com.osrsflavie.justpugginaround;
 
 import com.google.inject.Provides;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadLocalRandom;
-
 import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.NPC;
+import net.runelite.api.Player;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
-import net.runelite.client.audio.AudioPlayer;
+
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@Slf4j
 @PluginDescriptor(
         name = "Just Puggin' Around",
         description = "Plays tired sounds after travelling a configurable distance with a follower"
 )
 public class JustPugginAroundPlugin extends Plugin
 {
+    /**
+     * Number of consecutive stationary game ticks required
+     * before the run is evaluated.
+     */
     private static final int STOPPING_TICKS = 2;
-    private static final String PUG_TIRED_SOUND = "/pug_tired.wav";
-    private static final String PUPPY_TIRED_SOUND = "/puppy_tired.wav";
-
-    private static final Logger log = LoggerFactory.getLogger(JustPugginAroundPlugin.class);
+    private static final int FOLLOWER_ADJACENT_DISTANCE = 1;
 
     @Inject
     private Client client;
@@ -39,15 +38,27 @@ public class JustPugginAroundPlugin extends Plugin
     @Inject
     private JustPugginAroundConfig config;
 
-    @Inject
-    private AudioPlayer audioPlayer;
+    private final AudioManager audioManager =
+            new AudioManager(JustPugginAroundPlugin.class);
 
-    @Inject
-    private ScheduledExecutorService executorService;
-
+    /**
+     * Player location from the previous game tick.
+     */
     private WorldPoint previousLocation;
+
+    /**
+     * Number of tiles travelled during the current run.
+     */
     private int tilesTravelled;
+
+    /**
+     * Number of consecutive stationary ticks.
+     */
     private int stoppedTicks;
+
+    /**
+     * Whether the player moved during the previous tick.
+     */
     private boolean wasMoving;
 
     @Override
@@ -55,12 +66,21 @@ public class JustPugginAroundPlugin extends Plugin
     {
         resetTracking();
 
+        // Decode sounds once during startup so GameTick never has to do audio I/O.
+        audioManager.preload(
+                Sound.PUG_TIRED,
+                Sound.LABRADOR_TIRED,
+                Sound.PUPPY_TIRED,
+                Sound.PUPPY_TIRED_RARE
+        );
+
         log.info("Just Puggin' Around started");
     }
 
     @Override
     protected void shutDown()
     {
+        audioManager.close();
         resetTracking();
 
         log.info("Just Puggin' Around stopped");
@@ -84,7 +104,9 @@ public class JustPugginAroundPlugin extends Plugin
             return;
         }
 
-        if (client.getLocalPlayer() == null)
+        Player localPlayer = client.getLocalPlayer();
+
+        if (localPlayer == null)
         {
             resetTracking();
             return;
@@ -92,179 +114,246 @@ public class JustPugginAroundPlugin extends Plugin
 
         NPC follower = client.getFollower();
 
-        if (!hasQualifyingFollower(follower))
+        /*
+         * There is nothing to track without a follower. Every pet is
+         * eligible; the tired sound is gated by adjacency when the run ends.
+         */
+        if (follower == null)
         {
             resetTracking();
-            previousLocation = client.getLocalPlayer().getWorldLocation();
+
+            previousLocation =
+                    localPlayer.getWorldLocation();
+
             return;
         }
 
-        WorldPoint currentLocation = client.getLocalPlayer().getWorldLocation();
+        WorldPoint currentLocation = localPlayer.getWorldLocation();
 
+        /*
+         * Establish the initial player position.
+         */
         if (previousLocation == null)
         {
             previousLocation = currentLocation;
             return;
         }
 
-        boolean moved = !currentLocation.equals(previousLocation);
+        int distance = previousLocation.distanceTo(currentLocation);
 
-        if (moved)
+        if (distance > 0)
         {
-            handleMovement(currentLocation);
+            handleMovement(distance);
         }
         else
         {
-            handleStopped(follower);
+            handleStopped(localPlayer, follower);
         }
 
         previousLocation = currentLocation;
     }
 
-    private void handleMovement(WorldPoint currentLocation)
+    /**
+     * Handles a tick during which the player moved.
+     */
+    private void handleMovement(int distance)
     {
-        int distance = previousLocation.distanceTo(currentLocation);
+        tilesTravelled += distance;
 
-        if (distance > 0)
-        {
-            tilesTravelled += distance;
-        }
-
+        /*
+         * Moving cancels the stopping timer but does not
+         * reset accumulated travel distance.
+         */
         stoppedTicks = 0;
         wasMoving = true;
     }
 
-    private void handleStopped(NPC follower)
+    /**
+     * Handles a tick during which the player did not move.
+     */
+    private void handleStopped(Player localPlayer, NPC follower)
     {
+        /*
+         * First stationary tick after movement.
+         */
         if (wasMoving)
         {
             stoppedTicks = 1;
             wasMoving = false;
+
+            log.debug(
+                    "Player stopped: tick 1 of {}",
+                    STOPPING_TICKS
+            );
+
             return;
         }
 
+        /*
+         * Continue counting consecutive stationary ticks.
+         */
         if (stoppedTicks > 0)
         {
             stoppedTicks++;
+
+            log.debug(
+                    "Player stopped: tick {} of {}",
+                    stoppedTicks,
+                    STOPPING_TICKS
+            );
         }
         else
         {
             return;
         }
 
+        /*
+         * Once the stopping threshold has been reached,
+         * evaluate the run.
+         */
         if (stoppedTicks >= STOPPING_TICKS)
         {
-            finishStoppedRun(follower);
+            finishStoppedRun(follower, localPlayer);
         }
     }
 
-    private void finishStoppedRun(NPC follower)
+    /**
+     * Evaluates the completed stopping period.
+     */
+    private void finishStoppedRun(NPC follower, Player localPlayer)
     {
         int threshold = config.distanceThreshold();
 
-        /*
-         * When All Followers Tire is enabled, any detected follower
-         * can trigger the tired sound after the configured distance.
-         *
-         * When disabled, Pugs retain the original requirement of
-         * being adjacent to the player when the run ends.
-         */
-        boolean canTrigger = config.allFollowers()
-                || isFollowerNextToPlayer(follower);
+        boolean petNextToPlayer =
+                isFollowerNextToPlayer(localPlayer, follower);
 
-        if (tilesTravelled >= threshold && canTrigger)
+        log.debug(
+                "Stopped for {} ticks after travelling {} tiles; " +
+                        "threshold is {}; pet adjacent: {}",
+                stoppedTicks,
+                tilesTravelled,
+                threshold,
+                petNextToPlayer
+        );
+
+        /*
+         * The sound only plays when:
+         *
+         * 1. The configured distance threshold was reached.
+         * 2. The pet is adjacent to the player.
+         */
+        if (tilesTravelled >= threshold && petNextToPlayer)
         {
-            log.info("Tired sound triggered after {} tiles", tilesTravelled);
-            playTiredSoundWithChance();
+            log.info(
+                    "Tired sound triggered after {} tiles",
+                    tilesTravelled
+            );
+
+            playTiredSound(follower);
+        }
+        else
+        {
+            if (tilesTravelled < threshold)
+            {
+                log.debug(
+                        "Distance threshold not reached: {} / {} tiles",
+                        tilesTravelled,
+                        threshold
+                );
+            }
+
+            if (!petNextToPlayer)
+            {
+                log.debug(
+                        "Pet is not adjacent to player; " +
+                                "tired sound will not play"
+                );
+            }
         }
 
+        /*
+         * Once the stopping period has completed, reset
+         * both the accumulated distance and stopping timer.
+         */
         tilesTravelled = 0;
         stoppedTicks = 0;
         wasMoving = false;
     }
 
-    private boolean hasQualifyingFollower(NPC follower)
+    /**
+     * Determines whether the pet is adjacent to the player.
+     *
+     * A distance of 0 or 1 is accepted. Normally a follower
+     * will be on a neighboring tile, but accepting 0 prevents
+     * false negatives if the client reports both entities
+     * on the same tile.
+     */
+    private boolean isFollowerNextToPlayer(
+            Player localPlayer,
+            NPC follower)
     {
-        if (follower == null)
+        if (follower == null || localPlayer == null)
         {
             return false;
         }
 
-        /*
-         * All Followers Tire overrides the Pug-only name check.
-         */
-        if (config.allFollowers())
-        {
-            return true;
-        }
+        WorldPoint playerLocation = localPlayer.getWorldLocation();
 
-        return follower.getName() != null
-                && follower.getName().equalsIgnoreCase("Pug");
-    }
+        WorldPoint petLocation =
+                follower.getWorldLocation();
 
-    private boolean isFollowerNextToPlayer(NPC follower)
-    {
-        if (follower == null || client.getLocalPlayer() == null)
+        if (playerLocation == null || petLocation == null)
         {
             return false;
         }
 
-        WorldPoint playerLocation = client.getLocalPlayer().getWorldLocation();
-        WorldPoint followerLocation = follower.getWorldLocation();
-
-        if (playerLocation == null || followerLocation == null)
-        {
-            return false;
-        }
-
-        return playerLocation.distanceTo(followerLocation) <= 1;
+        return playerLocation.distanceTo(petLocation) <= FOLLOWER_ADJACENT_DISTANCE;
     }
 
     /**
-     * Performs the 1/100 rare-sound roll.
-     * 1/100: puppy_tired.wav
-     * 99/100: pug_tired.wav
+     * Selects and plays the tired sound for the current follower.
+     *
+     * When the global Pug override is enabled, every follower uses
+     * the Pug sound pool. Otherwise the follower-specific profile is
+     * used when one exists, with Labrador sounds as the default pool.
      */
-    private void playTiredSoundWithChance()
+    private void playTiredSound(NPC follower)
     {
-        if (ThreadLocalRandom.current().nextInt(100) == 0)
+        FollowerSoundProfile profile;
+
+        if (config.allPetsTireLikePugs())
         {
-            log.info("Rare tired sound triggered: {}", PUPPY_TIRED_SOUND);
-            playTiredSound(PUPPY_TIRED_SOUND);
+            profile = FollowerSoundProfile.PUG;
+
+            log.info(
+                    "All Pets Tire Like Pugs enabled; using Pug sound pool for follower ID {}",
+                    follower.getId()
+            );
         }
         else
         {
-            playTiredSound(PUG_TIRED_SOUND);
+            profile = FollowerSoundProfile.forNpc(follower);
+
+            if (profile == null)
+            {
+                profile = FollowerSoundProfile.LABRADOR;
+            }
         }
+
+        Sound sound = profile.chooseSound();
+
+        log.info(
+                "Tired sound triggered for follower ID {}: {}",
+                follower.getId(),
+                sound.getResource()
+        );
+
+        audioManager.play(sound, config.volume());
     }
 
     /**
-     * Plays a bundled audio resource using RuneLite's audio manager.
+     * Resets all movement tracking.
      */
-    private void playTiredSound(String soundResource)
-    {
-        int volume = config.volume();
-
-        if (volume <= 0)
-        {
-            return;
-        }
-
-        float gain = (float) (20.0 * Math.log10(volume / 100.0));
-
-        executorService.execute(() ->
-        {
-            try
-            {
-                audioPlayer.play(JustPugginAroundPlugin.class, soundResource, gain);
-            }
-            catch (Exception ex)
-            {
-                log.warn("Unable to play {}", soundResource, ex);
-            }
-        });
-    }
-
     private void resetTracking()
     {
         previousLocation = null;
@@ -276,6 +365,8 @@ public class JustPugginAroundPlugin extends Plugin
     @Provides
     JustPugginAroundConfig provideConfig(ConfigManager configManager)
     {
-        return configManager.getConfig(JustPugginAroundConfig.class);
+        return configManager.getConfig(
+                JustPugginAroundConfig.class
+        );
     }
 }
